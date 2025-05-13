@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק התאמת דגלים ועובדות</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .game-area {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .facts-container, .flags-container {
+            width: 48%;
+            background-color: #eef7fe;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .fact-item, .flag-item {
+            background-color: white;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .fact-item {
+            text-align: right;
+        }
+        .flag-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        .flag-item img {
+            max-height: 80px;
+            max-width: 120px;
+        }
+        .selected {
+            background-color: #d4e6f9;
+            transform: scale(1.03);
+        }
+        .matched {
+            background-color: #d4f9d4;
+            cursor: default;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .score-panel {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .result-message {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 30px;
+        }
+        .flag-placeholder {
+            width: 120px;
+            height: 80px;
+            background-color: #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>משחק התאמת דגלים ועובדות</h1>
+        
+        <div class="score-panel">
+            <div class="score">ניקוד: <span id="score">0</span> מתוך <span id="total-matches">10</span></div>
+            <div class="timer">זמן: <span id="timer">0:00</span></div>
+        </div>
+        
+        <div class="result-message" id="result-message"></div>
+        
+        <div class="game-area">
+            <div class="flags-container" id="flags-container">
+                <!-- דגלים יתווספו דינמית באמצעות JavaScript -->
+            </div>
+            
+            <div class="facts-container" id="facts-container">
+                <!-- עובדות יתווספו דינמית באמצעות JavaScript -->
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="next-level" class="hidden">המשך לסיבוב הבא</button>
+            <button id="restart-button">משחק חדש</button>
+        </div>
+    </div>
+    
+    <script>
+        // נתונים של דגלים ועובדות
+        const countryData = [
+            { country: "ישראל", fact: "המדינה שבה הומצא ה-USB דיסק-און-קי", flag: "https://flagcdn.com/w320/il.png" },
+            { country: "יפן", fact: "המדינה בעלת תוחלת החיים הגבוהה ביותר בעולם", flag: "https://flagcdn.com/w320/jp.png" },
+            { country: "ברזיל", fact: "זכתה יותר פעמים מכל מדינה אחרת בגביע העולם בכדורגל", flag: "https://flagcdn.com/w320/br.png" },
+            { country: "אוסטרליה", fact: "היבשת היחידה שהיא גם מדינה", flag: "https://flagcdn.com/w320/au.png" },
+            { country: "קנדה", fact: "בעלת קו החוף הארוך ביותר בעולם", flag: "https://flagcdn.com/w320/ca.png" },
+            { country: "איטליה", fact: "יש בה יותר אתרי מורשת עולמית של אונסק\"ו מכל מדינה אחרת", flag: "https://flagcdn.com/w320/it.png" },
+            { country: "איסלנד", fact: "המדינה הראשונה שבחרה אישה לנשיאות בבחירות דמוקרטיות", flag: "https://flagcdn.com/w320/is.png" },
+            { country: "דרום אפריקה", fact: "המדינה היחידה בעולם עם 3 ערי בירה", flag: "https://flagcdn.com/w320/za.png" },
+            { country: "שוויץ", fact: "המדינה בה נוצר השוקולד החלב הראשון", flag: "https://flagcdn.com/w320/ch.png" },
+            { country: "הודו", fact: "המדינה בעלת תעשיית הקולנוע הגדולה ביותר בעולם (בוליווד)", flag: "https://flagcdn.com/w320/in.png" },
+            { country: "מצרים", fact: "ממוקמות בה הפירמידות, אחד משבעת פלאי העולם העתיק", flag: "https://flagcdn.com/w320/eg.png" },
+            { country: "צרפת", fact: "המדינה המתוירת ביותר בעולם", flag: "https://flagcdn.com/w320/fr.png" },
+            { country: "סין", fact: "בנתה את החומה הארוכה ביותר בעולם", flag: "https://flagcdn.com/w320/cn.png" },
+            { country: "ניו זילנד", fact: "המדינה הראשונה שהעניקה זכות הצבעה לנשים", flag: "https://flagcdn.com/w320/nz.png" },
+            { country: "נורבגיה", fact: "המדינה שהמציאה את הסקי המודרני", flag: "https://flagcdn.com/w320/no.png" }
+        ];
+
+        // משתנים גלובליים למשחק
+        let currentRound = [];
+        let selectedFact = null;
+        let selectedFactElement = null;
+        let selectedFlag = null;
+        let selectedFlagElement = null;
+        let score = 0;
+        let roundSize = 5; // מספר הזוגות בכל סיבוב
+        let matchedPairs = new Set();
+        let usedCountries = new Set(); // מדינות שכבר שוחקו בסיבובים קודמים
+        let startTime;
+        let timerInterval;
+
+        // אלמנטים מהדף
+        const factsContainer = document.getElementById('facts-container');
+        const flagsContainer = document.getElementById('flags-container');
+        const checkButton = document.getElementById('check-button');
+        const nextLevelButton = document.getElementById('next-level');
+        const restartButton = document.getElementById('restart-button');
+        const scoreElement = document.getElementById('score');
+        const totalMatchesElement = document.getElementById('total-matches');
+        const resultMessage = document.getElementById('result-message');
+        const timerElement = document.getElementById('timer');
+
+        // מאזיני אירועים
+        nextLevelButton.addEventListener('click', loadNextRound);
+        restartButton.addEventListener('click', startNewGame);
+
+        // התחלת משחק חדש
+        function startNewGame() {
+            score = 0;
+            matchedPairs.clear();
+            usedCountries.clear(); // נקה את רשימת המדינות ששוחקו
+            scoreElement.textContent = score;
+            totalMatchesElement.textContent = roundSize;
+            resultMessage.textContent = '';
+            nextLevelButton.classList.add('hidden');
+            
+            // איפוס טיימר
+            clearInterval(timerInterval);
+            startTime = new Date();
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            loadRound();
+        }
+
+        // טעינת סיבוב משחק
+        function loadRound() {
+            // נקה את התצוגה
+            factsContainer.innerHTML = '';
+            flagsContainer.innerHTML = '';
+            
+            // בחר באופן אקראי מדינות לסיבוב זה (שלא שוחקו עדיין)
+            let availableCountries = countryData.filter(country => !usedCountries.has(country.country));
+            
+            // אם אין מספיק מדינות חדשות, אפס את הרשימה של המדינות ששוחקו
+            if (availableCountries.length < roundSize) {
+                usedCountries.clear();
+                availableCountries = countryData;
+            }
+            
+            const shuffledData = [...availableCountries].sort(() => 0.5 - Math.random());
+            currentRound = shuffledData.slice(0, roundSize);
+            
+            // הוסף את המדינות הנוכחיות לרשימת המדינות ששוחקו
+            currentRound.forEach(item => usedCountries.add(item.country));
+            
+            // הוסף עובדות בסדר אקראי
+            const shuffledFacts = [...currentRound].sort(() => 0.5 - Math.random());
+            
+            shuffledFacts.forEach((item, index) => {
+                const factElement = document.createElement('div');
+                factElement.className = 'fact-item';
+                factElement.textContent = item.fact;
+                factElement.dataset.index = index;
+                factElement.dataset.country = item.country;
+                
+                factElement.addEventListener('click', () => selectFact(factElement, item));
+                
+                factsContainer.appendChild(factElement);
+            });
+            
+            // הוסף דגלים בסדר אקראי
+            const shuffledFlags = [...currentRound].sort(() => 0.5 - Math.random());
+            
+            shuffledFlags.forEach((item, index) => {
+                const flagElement = document.createElement('div');
+                flagElement.className = 'flag-item';
+                flagElement.dataset.index = index;
+                flagElement.dataset.country = item.country;
+                
+                const flagImage = document.createElement('img');
+                flagImage.src = item.flag;
+                flagImage.alt = `דגל ${item.country}`;
+                
+                flagElement.appendChild(flagImage);
+                flagElement.addEventListener('click', () => selectFlag(flagElement, item));
+                
+                flagsContainer.appendChild(flagElement);
+            });
+        }
+
+        // פונקציה לבחירת עובדה
+        function selectFact(element, factData) {
+            // אם האלמנט כבר הותאם, אל תעשה כלום
+            if (element.classList.contains('matched')) {
+                return;
+            }
+            
+            // הסר בחירה קודמת
+            const previousSelected = factsContainer.querySelector('.selected');
+            if (previousSelected) {
+                previousSelected.classList.remove('selected');
+            }
+            
+            // בחר את האלמנט הנוכחי
+            element.classList.add('selected');
+            selectedFact = factData;
+            selectedFactElement = element;
+            
+            // בדוק אם יש גם דגל נבחר
+            if (selectedFlag) {
+                checkMatch();
+            }
+        }
+
+        // פונקציה לבחירת דגל
+        function selectFlag(element, flagData) {
+            // אם האלמנט כבר הותאם, אל תעשה כלום
+            if (element.classList.contains('matched')) {
+                return;
+            }
+            
+            // הסר בחירה קודמת
+            const previousSelected = flagsContainer.querySelector('.selected');
+            if (previousSelected) {
+                previousSelected.classList.remove('selected');
+            }
+            
+            // בחר את האלמנט הנוכחי
+            element.classList.add('selected');
+            selectedFlag = flagData;
+            selectedFlagElement = element;
+            
+            // בדוק אם יש גם עובדה נבחרת
+            if (selectedFact) {
+                checkMatch();
+            }
+        }
+
+        // פונקציה לבדיקת התאמה
+        function checkMatch() {
+            if (!selectedFact || !selectedFlag || !selectedFactElement || !selectedFlagElement) {
+                return;
+            }
+            
+            if (selectedFact.country === selectedFlag.country) {
+                // התאמה נכונה
+                selectedFactElement.classList.add('matched');
+                selectedFlagElement.classList.add('matched');
+                selectedFactElement.classList.remove('selected');
+                selectedFlagElement.classList.remove('selected');
+                
+                // הוסף לזוגות שהותאמו
+                matchedPairs.add(selectedFact.country);
+                
+                // עדכן ניקוד
+                score++;
+                scoreElement.textContent = score;
+                
+                resultMessage.textContent = `התאמה נכונה! זוהי ${selectedFact.country}`;
+                resultMessage.style.color = 'green';
+                
+                // בדוק אם הסיבוב הסתיים
+                if (matchedPairs.size === roundSize) {
+                    resultMessage.textContent = `כל הכבוד! סיימת את הסיבוב עם ${score} נקודות מתוך ${roundSize}`;
+                    nextLevelButton.classList.remove('hidden');
+                    clearInterval(timerInterval);
+                }
+            } else {
+                // התאמה שגויה
+                resultMessage.textContent = `התאמה שגויה! נסה שוב`;
+                resultMessage.style.color = 'red';
+                
+                selectedFactElement.classList.remove('selected');
+                selectedFlagElement.classList.remove('selected');
+            }
+            
+            // איפוס הבחירות
+            selectedFact = null;
+            selectedFlag = null;
+            selectedFactElement = null;
+            selectedFlagElement = null;
+        }
+
+        // טעינת סיבוב הבא
+        function loadNextRound() {
+            matchedPairs.clear();
+            resultMessage.textContent = '';
+            nextLevelButton.classList.add('hidden');
+            
+            // איפוס טיימר
+            clearInterval(timerInterval);
+            startTime = new Date();
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            loadRound();
+        }
+
+        // עדכון טיימר
+        function updateTimer() {
+            const now = new Date();
+            const elapsedTimeInSeconds = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(elapsedTimeInSeconds / 60);
+            const seconds = elapsedTimeInSeconds % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // התחל משחק חדש כשהדף נטען
+        window.addEventListener('load', startNewGame);
+    </script>
+</body>
+</html>
